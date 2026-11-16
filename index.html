@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="robots" content="noindex, nofollow">
+<title>Tracker</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Tracker</h1>
+  <button id="refreshBtn" class="icon-btn" aria-label="Refresh">&#x21bb;</button>
+</header>
+
+<main id="main" hidden>
+  <section class="card hero">
+    <div class="big" id="daysSince">–</div>
+    <div class="label">days since last entry</div>
+    <div class="sub" id="lastDate"></div>
+  </section>
+
+  <section class="card">
+    <h2>Initiated since <span id="sinceLabel"></span></h2>
+    <div id="counts" class="counts"></div>
+  </section>
+
+  <section class="card">
+    <h2>Average days between entries</h2>
+    <div class="mid" id="avgGap">–</div>
+    <div class="sub" id="avgNote"></div>
+  </section>
+
+  <button id="addBtn" class="primary">+ Add entry</button>
+  <p class="status" id="status"></p>
+</main>
+
+<section id="setup" class="card" hidden>
+  <h2>Connect to your sheet</h2>
+  <p class="sub">Paste the Apps Script web app URL and the access key. They are saved only on this phone.</p>
+  <label>Web app URL<input id="cfgUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></label>
+  <label>Access key<input id="cfgKey" type="password" autocomplete="off"></label>
+  <button id="saveCfg" class="primary">Save</button>
+  <p class="status" id="setupStatus"></p>
+</section>
+
+<dialog id="addDialog">
+  <form id="addForm" method="dialog">
+    <h2>New entry</h2>
+    <label>Date<input id="fDate" type="date" required></label>
+    <label>Initiated by<select id="fWho" required></select></label>
+    <label>Description<textarea id="fDesc" rows="4" placeholder="Optional"></textarea></label>
+    <div class="row">
+      <button type="button" id="cancelAdd">Cancel</button>
+      <button type="submit" class="primary" id="saveAdd">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<footer><button id="settingsBtn" class="link">Settings</button></footer>
+<script src="app.js"></script>
+</body>
+</html>
