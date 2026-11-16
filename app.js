@@ -43,10 +43,12 @@ async function api(body) {
   }
   const data = await res.json();
   if (!data.ok) throw new Error(data.error || 'Request failed');
-  return data.rows;
+  lastInfo = data.info || null;
+  return data.rows || [];
 }
 
 let lastRows = [];
+let lastInfo = null;
 
 function render(rows) {
   lastRows = rows;
@@ -69,7 +71,11 @@ function render(rows) {
 
 async function load() {
   setStatus('Loading…');
-  try { render(await api()); setStatus(`Updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`); }
+  try {
+    const rows = await api(); render(rows);
+    if (!rows.length) setStatus(`Connected, but no dates were read${lastInfo ? ` (${lastInfo.sheet}, last row ${lastInfo.lastRow})` : ''}. The script may need updating.`, true);
+    else setStatus(`Updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`);
+  }
   catch (e) { setStatus(`Couldn't load: ${e.message}`, true); }
 }
 
