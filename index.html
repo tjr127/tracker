@@ -20,17 +20,18 @@
 <main id="main" hidden>
   <section class="card hero">
     <div class="big" id="daysSince">–</div>
-    <div class="label">days since last entry</div>
+    <div class="label">days since last "Yes"</div>
     <div class="sub" id="lastDate"></div>
   </section>
 
   <section class="card">
     <h2>Initiated since <span id="sinceLabel"></span></h2>
     <div id="counts" class="counts"></div>
+    <div class="sub" id="yesNote"></div>
   </section>
 
   <section class="card">
-    <h2>Average days between entries</h2>
+    <h2>Average days between "Yes" entries</h2>
     <div class="mid" id="avgGap">–</div>
     <div class="sub" id="avgNote"></div>
   </section>
@@ -53,6 +54,9 @@
     <h2>New entry</h2>
     <label>Date<input id="fDate" type="date" required></label>
     <label>Initiated by<select id="fWho" required></select></label>
+    <label>Result<select id="fResult" required>
+      <option value="Yes">Yes</option><option value="No">No</option><option value="Unknown">Unknown</option>
+    </select></label>
     <label>Description<textarea id="fDesc" rows="4" placeholder="Optional"></textarea></label>
     <div class="row">
       <button type="button" id="cancelAdd">Cancel</button>

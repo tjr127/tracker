@@ -16,17 +16,21 @@ function todayStr() {
 }
 function normWho(w) { w = String(w || '').trim(); return /^both/i.test(w) ? 'Both' : (w || 'Unknown'); }
 
-// Pure stats function (also used by tests)
+function isYes(r) { return String(r.result == null ? 'Yes' : r.result).trim().toLowerCase() === 'yes'; }
+
+// Pure stats function (also used by tests).
+// Days since and average gap use only rows whose Result is "Yes"; counts include every initiation.
 function computeStats(rows, today) {
-  const dates = rows.map(r => r.date).filter(Boolean).sort();
-  if (!dates.length) return null;
-  const last = dates[dates.length - 1];
-  const daysSince = Math.round((parseDay(today) - parseDay(last)) / DAY);
+  const yesDates = rows.filter(isYes).map(r => r.date).filter(Boolean).sort();
   const counts = {};
   rows.filter(r => r.date >= COUNT_SINCE).forEach(r => { const w = normWho(r.who); counts[w] = (counts[w] || 0) + 1; });
-  const recent = dates.filter(d => d >= AVG_SINCE);
+  const yesSince = rows.filter(r => r.date >= COUNT_SINCE && isYes(r)).length;
+  if (!yesDates.length) return { last: null, daysSince: null, counts, yesSince, avg: null, avgN: 0 };
+  const last = yesDates[yesDates.length - 1];
+  const daysSince = Math.round((parseDay(today) - parseDay(last)) / DAY);
+  const recent = yesDates.filter(d => d >= AVG_SINCE);
   const avg = recent.length > 1 ? (parseDay(recent[recent.length - 1]) - parseDay(recent[0])) / DAY / (recent.length - 1) : null;
-  return { last, daysSince, counts, avg, avgN: recent.length };
+  return { last, daysSince, counts, yesSince, avg, avgN: recent.length };
 }
 
 function getCfg() { try { return JSON.parse(localStorage.getItem(CFG_KEY)) || null; } catch { return null; } }
@@ -53,9 +57,8 @@ let lastInfo = null;
 function render(rows) {
   lastRows = rows;
   const s = computeStats(rows, todayStr());
-  if (!s) { $('daysSince').textContent = '–'; return; }
-  $('daysSince').textContent = s.daysSince;
-  $('lastDate').textContent = `Last entry: ${s.last}`;
+  $('daysSince').textContent = s.daysSince == null ? '–' : s.daysSince;
+  $('lastDate').textContent = s.last ? `Last "Yes" entry: ${s.last}` : '';
   $('sinceLabel').textContent = COUNT_SINCE;
   const order = Object.keys(s.counts).sort((a, b) => s.counts[b] - s.counts[a]);
   $('counts').innerHTML = '';
@@ -65,8 +68,9 @@ function render(rows) {
     const sp = document.createElement('span'); sp.textContent = w;
     el.append(b, sp); $('counts').append(el);
   });
+  $('yesNote').textContent = `${s.yesSince} of these were a "Yes"`;
   $('avgGap').textContent = s.avg == null ? '–' : s.avg.toFixed(1);
-  $('avgNote').textContent = `Across ${s.avgN} entries since ${AVG_SINCE.slice(0, 4)}`;
+  $('avgNote').textContent = `Across ${s.avgN} "Yes" entries since ${AVG_SINCE.slice(0, 4)}`;
 }
 
 async function load() {
@@ -97,6 +101,7 @@ function openAdd() {
   });
   sel.append(Object.assign(document.createElement('option'), { value: 'Both', textContent: 'Both' }));
   $('fDesc').value = '';
+  $('fResult').value = 'Yes';
   $('addDialog').showModal();
 }
 
@@ -108,7 +113,7 @@ async function saveAdd(ev) {
   const time = date === todayStr() ? now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
   const btn = $('saveAdd'); btn.disabled = true; btn.textContent = 'Saving…';
   try {
-    const rows = await api({ action: 'add', date, time, who: $('fWho').value, description: $('fDesc').value.trim() });
+    const rows = await api({ action: 'add', date, time, who: $('fWho').value, result: $('fResult').value, description: $('fDesc').value.trim() });
     $('addDialog').close(); render(rows); setStatus('Entry saved to the sheet');
   } catch (e) { setStatus(`Couldn't save: ${e.message}`, true); $('addDialog').close(); }
   finally { btn.disabled = false; btn.textContent = 'Save'; }
@@ -130,4 +135,4 @@ if (typeof document !== 'undefined' && document.getElementById('main')) {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 }
 
-if (typeof module !== 'undefined') module.exports = { computeStats, normWho };
+if (typeof module !== 'undefined') module.exports = { computeStats, normWho, isYes };
