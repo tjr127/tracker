@@ -88,6 +88,7 @@ function setStatus(msg, err) { const el = $('status'); el.textContent = msg; el.
 function showMain() { $('setup').hidden = true; $('main').hidden = false; load(); }
 function showSetup() {
   const c = getCfg() || {}; $('cfgUrl').value = c.url || ''; $('cfgKey').value = c.key || '';
+  $('cfgMe').value = c.me || ''; $('cfgThem').value = c.them || '';
   $('main').hidden = true; $('setup').hidden = false;
 }
 
@@ -102,6 +103,7 @@ function openAdd() {
   sel.append(Object.assign(document.createElement('option'), { value: 'Both', textContent: 'Both' }));
   $('fDesc').value = '';
   $('fResult').value = 'Yes';
+  $('fText').value = ''; $('fShotStatus').textContent = '';
   $('addDialog').showModal();
 }
 
@@ -113,17 +115,75 @@ async function saveAdd(ev) {
   const time = date === todayStr() ? now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
   const btn = $('saveAdd'); btn.disabled = true; btn.textContent = 'Saving…';
   try {
-    const rows = await api({ action: 'add', date, time, who: $('fWho').value, result: $('fResult').value, description: $('fDesc').value.trim() });
+    const rows = await api({ action: 'add', date, time, who: $('fWho').value, result: $('fResult').value, exchange: $('fText').value.trim(), description: $('fDesc').value.trim() });
     $('addDialog').close(); render(rows); setStatus('Entry saved to the sheet');
   } catch (e) { setStatus(`Couldn't save: ${e.message}`, true); $('addDialog').close(); }
   finally { btn.disabled = false; btn.textContent = 'Save'; }
 }
 
+// ---- screenshots -> text ----
+function names() { const c = getCfg() || {}; return [c.me || 'Me', c.them || 'Them']; }
+
+async function handleShots(files, textareaId, statusId) {
+  const imgs = [...files].filter(f => f && f.type && f.type.startsWith('image/'));
+  if (!imgs.length) return;
+  const status = $(statusId), ta = $(textareaId);
+  const batches = [];
+  try {
+    for (let i = 0; i < imgs.length; i++) {
+      status.textContent = i === 0 && !window.Tesseract ? 'Loading the text reader (first time only)…' : `Reading screenshot ${i + 1} of ${imgs.length}…`;
+      batches.push(await readScreenshot(imgs[i]));
+    }
+    const msgs = mergeMessages(batches);
+    if (!msgs.length) { status.textContent = "Couldn't find any messages in that screenshot."; return; }
+    const [me, them] = names();
+    const text = formatMessages(msgs, me, them);
+    ta.value = ta.value.trim() ? ta.value.trim() + '\n' + text : text;
+    status.textContent = `Added ${msgs.length} message${msgs.length === 1 ? '' : 's'}. Check for mistakes before saving.`;
+  } catch (e) { status.textContent = `Couldn't read it: ${e.message}`; }
+}
+
+function wireShots(btnId, inputId, textareaId, statusId, dialogId) {
+  $(btnId).onclick = () => $(inputId).click();
+  $(inputId).onchange = (e) => { handleShots(e.target.files, textareaId, statusId); e.target.value = ''; };
+  $(dialogId).addEventListener('paste', (e) => {
+    const files = [...(e.clipboardData && e.clipboardData.files || [])];
+    if (files.some(f => f.type.startsWith('image/'))) { e.preventDefault(); handleShots(files, textareaId, statusId); }
+  });
+}
+
+function openText() {
+  const sel = $('tRow'); sel.innerHTML = '';
+  [...lastRows].sort((a, b) => (b.date + (b.row || 0)).localeCompare(a.date + (a.row || 0))).forEach(r => {
+    const o = document.createElement('option');
+    o.value = JSON.stringify({ row: r.row, date: r.date });
+    o.textContent = `${r.date} · ${normWho(r.who)} · ${r.result || 'Yes'}${r.hasText ? ' · has texts' : ''}`;
+    sel.append(o);
+  });
+  $('tText').value = ''; $('tShotStatus').textContent = '';
+  $('textDialog').showModal();
+}
+
+async function saveText(ev) {
+  ev.preventDefault();
+  const text = $('tText').value.trim(); if (!text) return;
+  const { row, date } = JSON.parse($('tRow').value);
+  const btn = $('saveText'); btn.disabled = true; btn.textContent = 'Saving…';
+  try { const rows = await api({ action: 'addText', row, date, text }); $('textDialog').close(); render(rows); setStatus('Texts saved to the sheet'); }
+  catch (e) { setStatus(`Couldn't save: ${e.message}`, true); $('textDialog').close(); }
+  finally { btn.disabled = false; btn.textContent = 'Save'; }
+}
+
 if (typeof document !== 'undefined' && document.getElementById('main')) {
+  wireShots('fShotBtn', 'fShotInput', 'fText', 'fShotStatus', 'addDialog');
+  wireShots('tShotBtn', 'tShotInput', 'tText', 'tShotStatus', 'textDialog');
+  $('addTextBtn').onclick = openText;
+  $('cancelText').onclick = () => $('textDialog').close();
+  $('textForm').onsubmit = saveText;
   $('saveCfg').onclick = async () => {
     const url = $('cfgUrl').value.trim(), key = $('cfgKey').value.trim();
     if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(url) || !key) { $('setupStatus').textContent = 'Enter the /exec URL and the key.'; return; }
-    setCfg({ url, key }); showMain();
+    setCfg({ url, key, me: $('cfgMe').value.trim(), them: $('cfgThem').value.trim() }); showMain();
   };
   $('settingsBtn').onclick = showSetup;
   $('refreshBtn').onclick = () => getCfg() && load();

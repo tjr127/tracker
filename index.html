@@ -37,6 +37,7 @@
   </section>
 
   <button id="addBtn" class="primary">+ Add entry</button>
+  <button id="addTextBtn" class="secondary">Add texts to an existing entry</button>
   <p class="status" id="status"></p>
 </main>
 
@@ -45,6 +46,9 @@
   <p class="sub">Paste the Apps Script web app URL and the access key. They are saved only on this phone.</p>
   <label>Web app URL<input id="cfgUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></label>
   <label>Access key<input id="cfgKey" type="password" autocomplete="off"></label>
+  <p class="sub">Names used when reading screenshots: messages on the right are yours, on the left are theirs.</p>
+  <label>Your name<input id="cfgMe" type="text" placeholder="Me" autocomplete="off"></label>
+  <label>Their name<input id="cfgThem" type="text" placeholder="Them" autocomplete="off"></label>
   <button id="saveCfg" class="primary">Save</button>
   <p class="status" id="setupStatus"></p>
 </section>
@@ -57,7 +61,9 @@
     <label>Result<select id="fResult" required>
       <option value="Yes">Yes</option><option value="No">No</option><option value="Unknown">Unknown</option>
     </select></label>
-    <label>Description<textarea id="fDesc" rows="4" placeholder="Optional"></textarea></label>
+    <label>Description<textarea id="fDesc" rows="3" placeholder="Optional"></textarea></label>
+    <label>Text exchange<textarea id="fText" rows="5" placeholder="Optional. Paste screenshots or tap the button below."></textarea></label>
+    <div class="shots"><button type="button" id="fShotBtn">Add screenshots</button><input id="fShotInput" type="file" accept="image/*" multiple hidden><span class="sub" id="fShotStatus"></span></div>
     <div class="row">
       <button type="button" id="cancelAdd">Cancel</button>
       <button type="submit" class="primary" id="saveAdd">Save</button>
@@ -65,7 +71,22 @@
   </form>
 </dialog>
 
+<dialog id="textDialog">
+  <form id="textForm" method="dialog">
+    <h2>Add texts to an entry</h2>
+    <label>Entry<select id="tRow" required></select></label>
+    <label>Text exchange<textarea id="tText" rows="8" placeholder="Paste screenshots or tap the button below." required></textarea></label>
+    <div class="shots"><button type="button" id="tShotBtn">Add screenshots</button><input id="tShotInput" type="file" accept="image/*" multiple hidden><span class="sub" id="tShotStatus"></span></div>
+    <p class="sub">Check the text before saving. It's added after anything already in that entry's Text Exchange cell.</p>
+    <div class="row">
+      <button type="button" id="cancelText">Cancel</button>
+      <button type="submit" class="primary" id="saveText">Save</button>
+    </div>
+  </form>
+</dialog>
+
 <footer><button id="settingsBtn" class="link">Settings</button></footer>
+<script src="ocr.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
