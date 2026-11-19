@@ -25,12 +25,14 @@ function computeStats(rows, today) {
   const counts = {};
   rows.filter(r => r.date >= COUNT_SINCE).forEach(r => { const w = normWho(r.who); counts[w] = (counts[w] || 0) + 1; });
   const yesSince = rows.filter(r => r.date >= COUNT_SINCE && isYes(r)).length;
-  if (!yesDates.length) return { last: null, daysSince: null, counts, yesSince, avg: null, avgN: 0 };
+  if (!yesDates.length) return { last: null, daysSince: null, counts, yesSince, avg: null, avgN: 0, avgYear: null, avgYearN: 0 };
   const last = yesDates[yesDates.length - 1];
   const daysSince = Math.round((parseDay(today) - parseDay(last)) / DAY);
+  const gap = (ds) => ds.length > 1 ? (parseDay(ds[ds.length - 1]) - parseDay(ds[0])) / DAY / (ds.length - 1) : null;
   const recent = yesDates.filter(d => d >= AVG_SINCE);
-  const avg = recent.length > 1 ? (parseDay(recent[recent.length - 1]) - parseDay(recent[0])) / DAY / (recent.length - 1) : null;
-  return { last, daysSince, counts, yesSince, avg, avgN: recent.length };
+  const yearAgo = String(Number(today.slice(0, 4)) - 1) + today.slice(4);
+  const year = yesDates.filter(d => d >= yearAgo && d <= today);
+  return { last, daysSince, counts, yesSince, avg: gap(recent), avgN: recent.length, avgYear: gap(year), avgYearN: year.length, yearAgo };
 }
 
 function getCfg() { try { return JSON.parse(localStorage.getItem(CFG_KEY)) || null; } catch { return null; } }
@@ -70,7 +72,9 @@ function render(rows) {
   });
   $('yesNote').textContent = `${s.yesSince} of these were a "Yes"`;
   $('avgGap').textContent = s.avg == null ? '–' : s.avg.toFixed(1);
-  $('avgNote').textContent = `Across ${s.avgN} "Yes" entries since ${AVG_SINCE.slice(0, 4)}`;
+  $('avgNote').textContent = `${s.avgN} "Yes" entries since ${AVG_SINCE.slice(0, 4)}`;
+  $('avgYear').textContent = s.avgYear == null ? '–' : s.avgYear.toFixed(1);
+  $('avgYearNote').textContent = `${s.avgYearN} "Yes" entries in the last 12 months`;
 }
 
 async function load() {

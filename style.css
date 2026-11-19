@@ -33,3 +33,5 @@ button.secondary { width:100%; margin-top:10px; background:#374151; }
 .shots { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 dialog { max-height:92vh; overflow:auto; }
 input[type=file][hidden] { display:none !important; }
+.avgs { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.avgs .label { font-size:13px; opacity:.75; margin-bottom:2px; }
