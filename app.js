@@ -28,7 +28,8 @@ function computeStats(rows, today) {
   if (!yesDates.length) return { last: null, daysSince: null, counts, yesSince, avg: null, avgN: 0, avgYear: null, avgYearN: 0 };
   const last = yesDates[yesDates.length - 1];
   const daysSince = Math.round((parseDay(today) - parseDay(last)) / DAY);
-  const gap = (ds) => ds.length > 1 ? (parseDay(ds[ds.length - 1]) - parseDay(ds[0])) / DAY / (ds.length - 1) : null;
+  // Average gap includes the current open stretch: (today - first "Yes") / number of "Yes" entries.
+  const gap = (ds) => ds.length ? (parseDay(today) - parseDay(ds[0])) / DAY / ds.length : null;
   const recent = yesDates.filter(d => d >= AVG_SINCE);
   const yearAgo = String(Number(today.slice(0, 4)) - 1) + today.slice(4);
   const year = yesDates.filter(d => d >= yearAgo && d <= today);
@@ -72,9 +73,9 @@ function render(rows) {
   });
   $('yesNote').textContent = `${s.yesSince} of these were a "Yes"`;
   $('avgGap').textContent = s.avg == null ? '–' : s.avg.toFixed(1);
-  $('avgNote').textContent = `${s.avgN} "Yes" entries since ${AVG_SINCE.slice(0, 4)}`;
+  $('avgNote').textContent = `${s.avgN} "Yes" entries since ${AVG_SINCE.slice(0, 4)}, through today`;
   $('avgYear').textContent = s.avgYear == null ? '–' : s.avgYear.toFixed(1);
-  $('avgYearNote').textContent = `${s.avgYearN} "Yes" entries in the last 12 months`;
+  $('avgYearNote').textContent = `${s.avgYearN} "Yes" entries in the last 12 months, through today`;
 }
 
 async function load() {

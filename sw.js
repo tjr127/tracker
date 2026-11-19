@@ -1,5 +1,5 @@
 // Caches only the app's own files so it opens fast. Sheet data is never cached.
-const CACHE = 'tracker-v5';
+const CACHE = 'tracker-v6';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'ocr.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
